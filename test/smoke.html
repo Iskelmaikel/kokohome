@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body { margin: 0; background: #0b0d12; padding: 24px; }
+      .col { max-width: 420px; margin: 0 auto; display: grid; gap: 18px; }
+    </style>
+  </head>
+  <body>
+    <div class="col" id="col"></div>
+    <script type="module">
+      import '../kokonut-light-card.js'
+
+      const log = []
+      const makeHass = (states) => ({
+        states,
+        callService: (domain, service, data) => {
+          log.push({ domain, service, data })
+          window.__calls = log
+        },
+      })
+
+      const states = {
+        'light.living_room': {
+          entity_id: 'light.living_room',
+          state: 'on',
+          attributes: {
+            friendly_name: 'Living Room',
+            brightness: 196,
+            rgb_color: [255, 180, 120],
+            color_temp_kelvin: 3200,
+            min_color_temp_kelvin: 2200,
+            max_color_temp_kelvin: 6500,
+            supported_color_modes: ['color_temp', 'rgb'],
+          },
+        },
+        'light.desk': {
+          entity_id: 'light.desk',
+          state: 'off',
+          attributes: {
+            friendly_name: 'Desk Lamp',
+            supported_color_modes: ['brightness'],
+          },
+        },
+        'light.broken': {
+          entity_id: 'light.broken',
+          state: 'unavailable',
+          attributes: { friendly_name: 'Garage (offline)' },
+        },
+      }
+      const hass = makeHass(states)
+      const col = document.getElementById('col')
+
+      for (const [entity, name] of [
+        ['light.living_room', 'Living Room'],
+        ['light.desk', 'Desk Lamp'],
+        ['light.broken', 'Garage'],
+      ]) {
+        const el = document.createElement('kokonut-light-card')
+        el.setConfig({ entity, name })
+        el.hass = hass
+        col.appendChild(el)
+      }
+
+      window.__ready = true
+    </script>
+  </body>
+</html>

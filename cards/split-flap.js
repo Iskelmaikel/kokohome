@@ -78,6 +78,7 @@ class SplitFlap extends KokoCard {
     return `
 .k-card { padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .board { display: inline-flex; gap: .08em; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; font-size: var(--sf-size, 36px); }
+:host([dark]) .tile { background: var(--sf-bg, #27272a); }
 .tile { position: relative; display: inline-block; height: 1.15em; width: .72em; border-radius: .12em; background: var(--sf-bg, #18181b); color: var(--sf-fg, #fafafa); box-shadow: inset 0 0 0 1px rgb(255 255 255/.06); perspective: 5em; }
 .half { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background: inherit; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .half.top { top: 0; border-radius: .12em .12em 0 0; }
@@ -155,7 +156,9 @@ class SplitFlap extends KokoCard {
     if (this.tiles.length !== n) {
       for (const t of this.tiles) t.stop()
       this.board.innerHTML = ''
-      this.tiles = [...padded].map((ch) => { const el = document.createElement('span'); this.board.append(el); return new Tile(el, ' ') })
+      // A fresh board shows its value at once; only later changes flip.
+      const first = !this.tiles.length
+      this.tiles = [...padded].map((ch) => { const el = document.createElement('span'); this.board.append(el); return new Tile(el, first ? ch : ' ') })
       this.fit()
     }
     ;[...padded].forEach((ch, i) => { if (this.tiles[i].target !== ch) this.tiles[i].set(ch, i * STAGGER) })

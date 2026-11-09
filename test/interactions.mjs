@@ -231,4 +231,69 @@ export const INTERACTIONS = {
     if (hit !== 'case-cameras') throw new Error('something covers the grid after close: ' + hit)
     return { open, second }
   },
+  'tabs': async (page, s) => {
+    const el = await page.evaluateHandle((sel) => document.querySelector(sel).querySelector('kokonut-swipe-tabs'), s)
+    const tab = await el.evaluateHandle((e) => e.shadowRoot.querySelectorAll('.tab')[1])
+    await tab.asElement().scrollIntoViewIfNeeded(); await tab.asElement().click()
+    await page.waitForTimeout(700)
+    const r = await el.evaluate((e) => ({ sel: e.selected, p: e.progress.get(), h: e.shadowRoot.querySelector('.view').style.height, dial: !!e.shadowRoot.querySelectorAll('.panel')[1].querySelector('kokonut-detent-dial') }))
+    if (r.sel !== 1 || Math.abs(r.p - 1) > 0.01 || !r.dial) throw new Error(JSON.stringify(r))
+    // Swipe back to the first tab on the panel area.
+    const v = await box(page, `${s} >> .view`)
+    await page.mouse.move(v.x + 20, v.y + v.height - 10); await page.mouse.down()
+    await page.mouse.move(v.x + v.width * 0.7, v.y + v.height - 10, { steps: 6 }); await page.mouse.up()
+    await page.waitForTimeout(700)
+    const back = await el.evaluate((e) => e.selected)
+    if (back !== 0) throw new Error('swipe did not go back, selected=' + back)
+    return r
+  },
+  'flick': async (page, s) => {
+    const r0 = await box(page, `${s} >> .root`)
+    await page.mouse.click(r0.x + r0.width * 0.8, r0.y + r0.height * 0.7)
+    await page.waitForTimeout(1300)
+    const a = await page.evaluate((sel) => document.querySelector(sel).querySelector('kokonut-flick-card').s.angle, s)
+    if (Math.abs(Math.abs(a) - 180) > 1) throw new Error('angle ' + a)
+    return { angle: a }
+  },
+  'rail': async (page, s) => {
+    const nx = await box(page, `${s} >> .next`)
+    await page.mouse.click(nx.x + nx.width / 2, nx.y + nx.height / 2)
+    await page.waitForTimeout(900)
+    const a = await page.evaluate((sel) => document.querySelector(sel).querySelector('kokonut-momentum-rail').active, s)
+    if (a !== 1) throw new Error('active ' + a)
+    return { active: a }
+  },
+  'island': async (page, s) => {
+    const label = () => page.evaluate((sel) => { const r = document.querySelector(sel).querySelector('kokonut-status-island').shadowRoot.querySelector('.pill .row:not(.out) .lbl'); return r && r.textContent }, s)
+    const first = await label()
+    await page.evaluate(() => { const st = window.__hass.states; window.__setStates({ ...st, 'script.play_youtube_on_lg_tv': { ...st['script.play_youtube_on_lg_tv'], state: 'on' } }) })
+    await page.waitForTimeout(500)
+    const running = await label()
+    await page.evaluate(() => { const st = window.__hass.states; window.__setStates({ ...st, 'script.play_youtube_on_lg_tv': { ...st['script.play_youtube_on_lg_tv'], state: 'off' } }) })
+    await page.waitForTimeout(500)
+    const done = await label()
+    if (running !== 'Starting Dog TV' || done !== 'Dog TV is on') throw new Error(JSON.stringify({ first, running, done }))
+    return { first, running, done }
+  },
+  'dock': async (page, s) => {
+    await reset(page)
+    const btn = await page.evaluateHandle((sel) => document.querySelector(sel).querySelector('kokonut-tool-dock').shadowRoot.querySelectorAll('.tool')[2], s)
+    await btn.asElement().scrollIntoViewIfNeeded(); await btn.asElement().click()
+    await page.waitForTimeout(600)
+    const c = await page.evaluate(() => window.__calls.map((x) => [x.service, x.data.option]))
+    const plate = await page.evaluate((sel) => { const el = document.querySelector(sel).querySelector('kokonut-tool-dock'); return { x: el.px.get(), btn: el.btns[2].offsetLeft } }, s)
+    if (!c.some((x) => x[0] === 'select_option' && x[1] === 'Night')) throw new Error(JSON.stringify(c))
+    if (Math.abs(plate.x - plate.btn) > 1) throw new Error('plate not under Night: ' + JSON.stringify(plate))
+    return { call: c[0], plate }
+  },
+  'dock-canvas': async (page, s) => {
+    const g = await box(page, `${s} >> .grip`)
+    const st = await box(page, `${s} >> .stage`)
+    await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.mouse.down()
+    await page.mouse.move(st.x + 30, st.y + st.height / 2, { steps: 10 }); await page.mouse.up()
+    await page.waitForTimeout(900)
+    const edge = await page.evaluate((sel) => document.querySelector(sel).querySelector('kokonut-tool-dock').edge, s)
+    if (edge !== 'left') throw new Error('edge ' + edge)
+    return { edge }
+  },
 }

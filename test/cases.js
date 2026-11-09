@@ -27,4 +27,18 @@ export const CASES = [
   { id: 'notifications', config: { type: 'custom:kokonut-notification-stack' } },
   { id: 'now-playing', config: { type: 'custom:kokonut-now-playing', entity: 'media_player.living_room_lg_tv' } },
   { id: 'cameras', config: { type: 'custom:kokonut-lightbox-grid', entities: ['camera.doggy_cam', 'camera.front_door', 'camera.backyard'] } },
+  { id: 'tabs', config: { type: 'custom:kokonut-swipe-tabs', tabs: [
+    { title: 'Living', icon: 'mdi:sofa', cards: [{ type: 'custom:kokonut-hold-button', entity: 'script.all_off', variant: 'grey' }, { type: 'custom:kokonut-switch-button', entity: 'light.standing_light_1' }] },
+    { title: 'Climate', icon: 'mdi:air-conditioner', cards: [{ type: 'custom:kokonut-detent-dial', entity: 'climate.living_room_ac', size: 200 }] },
+    { title: 'Media', icon: 'mdi:television', card: { type: 'markdown', title: 'Media', text: 'A plain HA card in a tab' } }] } },
+  { id: 'flick', config: { type: 'custom:kokonut-flick-card', front: { type: 'custom:kokonut-split-flap', clock: true, name: 'Front: clock' }, back: { type: 'custom:kokonut-split-flap', text: 'BACK', name: 'Back side' } } },
+  { id: 'rail', config: { type: 'custom:kokonut-momentum-rail', title: 'Quick controls', eyebrow: 'Swipe through', card_width: 220, cards: [
+    { type: 'custom:kokonut-switch-button', entity: 'input_boolean.night_mode' }, { type: 'custom:kokonut-particle-button', entity: 'scene.movie_night' },
+    { type: 'custom:kokonut-hold-button', entity: 'script.all_off' }, { type: 'custom:kokonut-bell-button', entity: 'input_boolean.doorbell_alerts', variant: 'compact' }] } },
+  { id: 'island', config: { type: 'custom:kokonut-status-island', items: [
+    { entity: 'script.play_youtube_on_lg_tv', label: 'Starting Dog TV', done_label: 'Dog TV is on' },
+    'media_player.living_room_lg_tv', 'binary_sensor.front_door', 'lock.front_door',
+    { entity: 'sensor.ikea_plug_power', above: 50, label: 'Desk drawing power' }] } },
+  { id: 'dock', config: { type: 'custom:kokonut-tool-dock', entity: 'input_select.house_mode', icons: { Home: 'mdi:home', Away: 'mdi:walk', Night: 'mdi:weather-night', Guest: 'mdi:account-multiple', Vacation: 'mdi:airplane' } } },
+  { id: 'dock-canvas', config: { type: 'custom:kokonut-tool-dock', canvas: { type: 'custom:kokonut-lightbox-grid', entities: ['camera.doggy_cam'], card: false }, tools: ['scene.movie_night', 'script.play_youtube_on_lg_tv', 'script.all_off'] } },
 ]

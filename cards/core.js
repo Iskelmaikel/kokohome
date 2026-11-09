@@ -505,6 +505,37 @@ export async function createCard(config, hass) {
   return el
 }
 
+/**
+ * A set of nested Lovelace cards inside a container card. Creates them via
+ * HA's card helpers, keeps their hass fresh, and swaps a child out when it
+ * fires `ll-rebuild` (e.g. a custom card whose element loaded late).
+ */
+export class NestedCards {
+  constructor(host) { this.host = host; this.els = []; this.configs = [] }
+  async build(configs, mount) {
+    this.configs = configs
+    this.els = await Promise.all(configs.map((c) => this.make(c)))
+    mount(this.els)
+    return this.els
+  }
+  async make(config) {
+    let el
+    try { el = await createCard(config, this.host.hass) } catch (e) {
+      el = document.createElement('div')
+      el.style.cssText = 'padding:16px;color:var(--error-color,#dc2626);font-size:13px'
+      el.textContent = `Card error: ${e && e.message ? e.message : e}`
+    }
+    el.addEventListener('ll-rebuild', async (ev) => {
+      ev.stopPropagation()
+      const fresh = await this.make(config)
+      const i = this.els.indexOf(el)
+      if (i >= 0) { this.els[i] = fresh; el.replaceWith(fresh) }
+    }, { once: true })
+    return el
+  }
+  set hass(h) { for (const el of this.els) { try { el.hass = h } catch (_) { /* noop */ } } }
+}
+
 /* --------------------------------------------------------------- base card */
 
 // Theme tokens shared by all cards. Kokonut's zinc palette, switched by the

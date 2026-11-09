@@ -41,14 +41,22 @@
 <div id="grid"></div>
 <script type="module">
   import { makeHass } from './mock-hass.js'
-  import { CASES } from './cases.js'
   const params = new URLSearchParams(location.search)
+  // ?cases=other.js renders another case set; it may export STATES to add to the mock.
+  const mod = await import('./' + (params.get('cases') || 'cases.js'))
+  const CASES = mod.CASES
   const dark = params.get('dark') === '1'
   const only = params.get('only')
   if (params.get('col')) document.documentElement.style.setProperty('--col', params.get('col'))
   if (dark) document.body.classList.add('dark')
   await import('../kokohome.js')
+  // kokonut-lamp loads React from a CDN the test box cannot reach: stand in a plain box.
+  if (params.get('lamp') === '1' && !customElements.get('kokonut-lamp')) customElements.define('kokonut-lamp', class extends HTMLElement {
+    setConfig(c) { this.c = c; this.style.cssText = 'display:block;height:230px;border:1px dashed #999;border-radius:12px;padding:8px;font:12px sans-serif' ; this.textContent = 'lamp ' + c.entity }
+    set hass(h) {}
+  })
   const hass = makeHass({ dark })
+  if (mod.STATES) Object.assign(hass.states, mod.STATES)
   window.__hass = hass
   const grid = document.getElementById('grid')
   const cards = []

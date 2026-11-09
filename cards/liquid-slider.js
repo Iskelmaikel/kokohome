@@ -309,7 +309,7 @@ svg[data-dragging] { cursor: grabbing; }
     this.$('.lbl').textContent = this.config.name || friendlyName(st, this.config.entity)
     this.card.setAttribute('aria-label', this.config.name || friendlyName(st, this.config.entity))
     this.setColor()
-    if (!this.adapter) return
+    if (!this.adapter) { if (isUnavailable(st)) { this.$('.v').textContent = '—'; this.$('.u').textContent = ''; this._dash = true } return }
     const a = this.adapter
     this.card.setAttribute('aria-valuemin', a.min); this.card.setAttribute('aria-valuemax', a.max)
     this.drawGraduations()
@@ -322,6 +322,9 @@ svg[data-dragging] { cursor: grabbing; }
       s.target = a.max - a.min > 0 ? (this.value - a.min) / (a.max - a.min) : 0
       if (first) { s.level = s.target; this.draw() } else this.wake()
     }
+    // Unavailable (e.g. a TV that is off): show a dash, not a stale number.
+    if (isUnavailable(st)) { this.$('.v').textContent = '—'; this.$('.u').textContent = ''; this._dash = true }
+    else if (this._dash) { this._dash = false; this.renderValue() }
   }
 
   connected() { if (this.s) this.wake() }

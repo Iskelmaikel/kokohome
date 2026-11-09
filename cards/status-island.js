@@ -272,7 +272,8 @@ ul { list-style: none; margin: 0; display: flex; width: 320px; max-width: calc(1
       if (t.status === 'done' && !this.open && now - t.doneAt >= this.config.dismiss_after) { this.tasks.delete(id); changed = true }
     }
     if (this.open && !this.tasks.size) this.open = false
-    if (changed) this.paint()
+    // An island that starts idle still needs its first paint.
+    if (changed || !this.isl.firstChild) this.paint()
   }
 
   update(old) { this.sync(old) }

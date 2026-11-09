@@ -36,6 +36,7 @@ for (const dark of [false, true]) {
   })
   const q = new URLSearchParams({ dark: dark ? '1' : '0', col })
   if (only) q.set('only', only)
+  if (opt('--cases', '')) { q.set('cases', opt('--cases', '')); q.set('lamp', '1') }
   await page.goto(`http://koko.test/test/harness.html?${q}`)
   await page.waitForFunction(() => window.__ready === true, null, { timeout: 15000 })
   await page.waitForTimeout(1600)

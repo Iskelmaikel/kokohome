@@ -137,4 +137,43 @@ export const INTERACTIONS = {
     if (!(v > 0.4 && v < 0.95)) throw new Error('unexpected volume ' + v)
     return { volume_level: v, calls: set.length }
   },
+  // Tap the legend: the ring turns so that slice is selected.
+  'ring-energy': async (page, s) => {
+    const btn = await page.evaluateHandle((sel) => document.querySelector(sel).querySelector('kokonut-spending-ring').shadowRoot.querySelectorAll('li button')[2], s)
+    await btn.asElement().scrollIntoViewIfNeeded()
+    await btn.asElement().click()
+    await page.waitForTimeout(900)
+    const r = await page.evaluate((sel) => { const el = document.querySelector(sel).querySelector('kokonut-spending-ring'); return { selected: el.selected, a: el.sim.a, mid: el.spans[2].mid, label: el.shadowRoot.querySelector('.mname').textContent } }, s)
+    if (r.selected !== 2) throw new Error('not selected: ' + JSON.stringify(r))
+    if (Math.abs(((-r.a - r.mid) % 360 + 540) % 360 - 180) > 1) throw new Error('ring did not turn to slice: ' + JSON.stringify(r))
+    return r.label
+  },
+  // Scrub the chart, then switch to 7 days: the headline must change.
+  'metric-energy': async (page, s) => {
+    const el = await page.evaluateHandle((sel) => document.querySelector(sel).querySelector('kokonut-metric-card'), s)
+    const before = await el.evaluate((e) => e.shadowRoot.querySelector('.sr').textContent)
+    const chart = await box(page, `${s} >> .chart`)
+    await page.mouse.move(chart.x + chart.width * 0.5, chart.y + chart.height / 2)
+    await page.waitForTimeout(200)
+    const cap = await el.evaluate((e) => e.shadowRoot.querySelector('.cap').textContent)
+    await page.mouse.move(chart.x - 40, chart.y - 40)
+    const b7 = await el.evaluateHandle((e) => e.shadowRoot.querySelector('.seg button[data-d="7"]'))
+    await b7.asElement().click()
+    await page.waitForTimeout(600)
+    const after = await el.evaluate((e) => e.shadowRoot.querySelector('.sr').textContent)
+    if (before === after) throw new Error('period switch did not change total: ' + before)
+    if (!/ vs /.test(cap)) throw new Error('scrub caption missing: ' + cap)
+    return { before, after, cap }
+  },
+  // Pin a day: the log opens.
+  'uptime': async (page, s) => {
+    const rows = await box(page, `${s} >> .rows`)
+    await page.mouse.move(rows.x + rows.width * 0.7, rows.y + rows.height / 2)
+    await page.mouse.down(); await page.mouse.up()
+    await page.waitForTimeout(400)
+    const open = await page.evaluate((sel) => document.querySelector(sel).querySelector('kokonut-uptime-card').shadowRoot.querySelector('.log').hasAttribute('data-open'), s)
+    if (!open) throw new Error('log did not open')
+    await page.mouse.move(rows.x - 50, rows.y - 50)
+    return { pinned: true }
+  },
 }

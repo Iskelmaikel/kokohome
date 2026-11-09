@@ -24,4 +24,7 @@ export const CASES = [
   { id: 'metric-energy', config: { type: 'custom:kokonut-metric-card', name: 'Energy', price: 0.27, currency: 'EUR', segments: [{ entity: 'sensor.ac_energy', name: 'AC' }, { entity: 'sensor.fridge_energy', name: 'Fridge' }, { entity: 'sensor.tv_energy', name: 'TV' }] } },
   { id: 'uptime', config: { type: 'custom:kokonut-uptime-card', title: 'Network & devices', entities: [{ entity: 'binary_sensor.internet', name: 'Internet' }, { entity: 'switch.ikea_plug', name: 'IKEA plug' }, { entity: 'light.standing_light_1', name: 'Floor lamp' }] } },
   { id: 'terrain', wide: true, config: { type: 'custom:kokonut-activity-terrain', entity: 'sensor.ikea_plug_energy', name: 'Desk energy' } },
+  { id: 'notifications', config: { type: 'custom:kokonut-notification-stack' } },
+  { id: 'now-playing', config: { type: 'custom:kokonut-now-playing', entity: 'media_player.living_room_lg_tv' } },
+  { id: 'cameras', config: { type: 'custom:kokonut-lightbox-grid', entities: ['camera.doggy_cam', 'camera.front_door', 'camera.backyard'] } },
 ]

@@ -18,6 +18,9 @@ import './cards/activity-rings.js'
 import './cards/metric-card.js'
 import './cards/uptime-card.js'
 import './cards/activity-terrain.js'
+import './cards/notification-stack.js'
+import './cards/now-playing.js'
+import './cards/lightbox-grid.js'
 
 console.info(`%c KOKOHOME %c v${VERSION} `,
   'background:#18181b;color:#fafafa;border-radius:4px 0 0 4px;padding:2px 6px',

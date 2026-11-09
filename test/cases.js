@@ -17,4 +17,11 @@ export const CASES = [
   { id: 'wheel-mixed', config: { type: 'custom:kokonut-wheel-picker', name: 'Wake-up', columns: [{ entity: 'input_datetime.alarm', minute_step: 5 }, { entity: 'input_select.house_mode', label: 'Mode' }] } },
   { id: 'liquid-volume', config: { type: 'custom:kokonut-liquid-slider', entity: 'media_player.living_room_lg_tv', name: 'TV volume' } },
   { id: 'liquid-lamp', config: { type: 'custom:kokonut-liquid-slider', entity: 'light.standing_light_1', name: 'Floor lamp' } },
+  { id: 'flap-clock', config: { type: 'custom:kokonut-split-flap', clock: true, name: 'Living room' } },
+  { id: 'flap-temps', config: { type: 'custom:kokonut-split-flap', entities: [{ entity: 'sensor.living_room_temperature', label: 'IN' }, { entity: 'sensor.outside_temperature', label: 'OUT' }], interval: 2500 } },
+  { id: 'ring-energy', config: { type: 'custom:kokonut-spending-ring', title: 'Energy today', price: 0.27, currency: 'EUR', entities: [{ entity: 'sensor.ac_energy', name: 'AC' }, { entity: 'sensor.fridge_energy', name: 'Fridge' }, { entity: 'sensor.tv_energy', name: 'TV' }, { entity: 'sensor.ikea_plug_energy', name: 'IKEA plug' }] } },
+  { id: 'activity', wide: true, config: { type: 'custom:kokonut-activity-rings', title: 'Today', rings: [{ entity: 'sensor.ikea_plug_energy', target: 2.5, label: 'Energy', unit: 'kWh' }, { entity: 'sensor.steps', target: 5000, label: 'Dog walks', unit: 'steps' }, { entity: 'sensor.water', target: 2, label: 'Water' }] } },
+  { id: 'metric-energy', config: { type: 'custom:kokonut-metric-card', name: 'Energy', price: 0.27, currency: 'EUR', segments: [{ entity: 'sensor.ac_energy', name: 'AC' }, { entity: 'sensor.fridge_energy', name: 'Fridge' }, { entity: 'sensor.tv_energy', name: 'TV' }] } },
+  { id: 'uptime', config: { type: 'custom:kokonut-uptime-card', title: 'Network & devices', entities: [{ entity: 'binary_sensor.internet', name: 'Internet' }, { entity: 'switch.ikea_plug', name: 'IKEA plug' }, { entity: 'light.standing_light_1', name: 'Floor lamp' }] } },
+  { id: 'terrain', wide: true, config: { type: 'custom:kokonut-activity-terrain', entity: 'sensor.ikea_plug_energy', name: 'Desk energy' } },
 ]

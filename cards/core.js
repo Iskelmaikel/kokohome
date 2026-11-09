@@ -175,6 +175,45 @@ export function rollSwap(container, html, { dy = 10, blur = 2, duration = 200 } 
   )
 }
 
+/**
+ * Rolling digits: every digit sits on its own 0–9 wheel and rolls to its new
+ * value; separators stay still. Keyed from the right so units stay put when
+ * the length changes. Container needs `display:inline-flex`.
+ */
+export function rollDigits(el, text, { duration = 380 } = {}) {
+  const chars = String(text).split('')
+  const key = (i) => chars.length - i
+  const existing = new Map([...el.children].map((c) => [c.dataset.k, c]))
+  const next = chars.map((ch, i) => {
+    const isDigit = ch >= '0' && ch <= '9'
+    const k = `${isDigit ? 'd' : 's'}${key(i)}`
+    let node = existing.get(k)
+    if (!node) {
+      node = document.createElement('span')
+      node.dataset.k = k
+      if (isDigit) {
+        node.className = 'rd'
+        node.innerHTML = `<span class="rd-sizer">0</span><span class="rd-wheel" style="transition:transform ${duration}ms cubic-bezier(0.23,1,0.32,1)">${'0123456789'.split('').map((d) => `<span>${d}</span>`).join('')}</span>`
+      }
+    }
+    if (isDigit) {
+      const wheel = node.lastElementChild
+      const target = `translateY(-${Number(ch) * 10}%)`
+      if (!node.isConnected) { wheel.style.transition = 'none'; wheel.style.transform = target; requestAnimationFrame(() => { wheel.style.transition = `transform ${duration}ms cubic-bezier(0.23,1,0.32,1)` }) }
+      else wheel.style.transform = target
+    } else node.textContent = ch
+    return node
+  })
+  el.replaceChildren(...next)
+}
+export const ROLL_CSS = `
+.rd { position: relative; display: inline-block; height: 1em; overflow: hidden; line-height: 1; }
+.rd-sizer { visibility: hidden; }
+.rd-wheel { position: absolute; left: 0; right: 0; top: 0; display: flex; flex-direction: column; }
+.rd-wheel > span { display: block; height: 1em; line-height: 1; }
+@media (prefers-reduced-motion: reduce) { .rd-wheel { transition: none !important; } }
+`
+
 /* ------------------------------------------------------------------- icons */
 
 // A few Lucide icons (ISC) as path data, 24x24, stroke-based.
@@ -380,6 +419,16 @@ export function numericAdapter(hass, stateObj, config = {}) {
   const dec = config.decimals ?? decimals(r.step)
   r.format = (v) => `${Number(v).toFixed(dec)}${r.unit === '°' || r.unit === '%' ? r.unit : r.unit ? ` ${r.unit}` : ''}`
   return r
+}
+
+/** Local midnight `offset` calendar days from today (DST-safe, unlike n*24h). */
+export function localDay(offset = 0, from = new Date()) {
+  return new Date(from.getFullYear(), from.getMonth(), from.getDate() + offset)
+}
+/** YYYY-MM-DD for a timestamp in local time. */
+export function dayKey(t) {
+  const d = new Date(t)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 /** Debounce: call fn once, `ms` after the last call. */

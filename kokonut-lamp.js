@@ -15,7 +15,7 @@ import React from 'https://esm.sh/react@18.3.1'
 import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1'
 import htm from 'https://esm.sh/htm@3.1.1'
 
-const VERSION = '0.3.0'
+const VERSION = '0.4.0'
 const { useRef, useEffect, useState } = React
 const html = htm.bind(React.createElement)
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v)
@@ -29,7 +29,7 @@ const SPREAD = 500, RESTORE = 16, SURFACE_DAMPING = 5, MAX_WAVE = 14
 
 // Pull cord constants
 const N = 14, SEG = 9, GRAV = 0.7, FRICTION = 0.985, ITER = 8
-const ANCHOR_Y = 40, THRESHOLD = 24, GRAB_R2 = 42 * 42
+const ANCHOR_Y = 40, THRESHOLD = 22, TAP_SLOP = 8, TAP_MS = 450
 
 const COLOR_MODES_WITH_BRIGHTNESS = ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white']
 
@@ -68,7 +68,10 @@ const CSS = `
 .kl-unavail { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5; color: rgba(245,247,251,0.55); font-size: 12px; }
 
 /* Pull cord */
-.kl-cord { position: relative; flex: 0 0 46px; width: 46px; height: 100%; }
+.kl-cord { position: relative; flex: 0 0 46px; width: 46px; height: 100%; touch-action: none; cursor: grab;
+  user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+/* Invisible margin around the cord strip so near-misses still grab it instead of scrolling. */
+.kl-cord::before { content: ''; position: absolute; top: -10px; bottom: -14px; left: -6px; right: -12px; }
 .kl-svg { display: block; width: 100%; height: 100%; touch-action: none; }
 .kl-cordpath { fill: none; stroke: rgba(230,235,245,0.75); stroke-width: 2.2; stroke-linecap: round; }
 .kl-bead { stroke: rgba(0,0,0,0.25); stroke-width: 1; cursor: grab; }
@@ -118,7 +121,7 @@ function Lamp({ hass, config }) {
   useEffect(() => { if (!dragRef.current) setPct(haPct) }, [haPct])
 
   const gaugeRef = useRef(null), liquidRef = useRef(null), rimRef = useRef(null), bubbleEls = useRef([])
-  const svgRef = useRef(null), pathRef = useRef(null), beadRef = useRef(null)
+  const svgRef = useRef(null), pathRef = useRef(null), beadRef = useRef(null), cordRef = useRef(null)
 
   /* ---- liquid gauge simulation ---- */
   useEffect(() => {
@@ -184,14 +187,17 @@ function Lamp({ hass, config }) {
 
   /* ---- pull cord simulation ---- */
   useEffect(() => {
-    const svg = svgRef.current
-    if (!svg) return
+    const svg = svgRef.current, hit = cordRef.current
+    if (!svg || !hit) return
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let width = svg.clientWidth || 46, anchorX = width / 2
     const pts = []
     for (let i = 0; i < N; i++) { const y = ANCHOR_Y + i * SEG; pts.push({ x: anchorX, y, px: anchorX, py: y }) }
     const restBeadY = ANCHOR_Y + (N - 1) * SEG
-    let grab = -1, mx = 0, my = 0, armed = true, raf = 0
+    let grab = -1, mx = 0, my = 0, offX = 0, offY = 0, armed = true, toggled = false, raf = 0
+    let downX = 0, downY = 0, downT = 0, moved = 0
+    const fire = () => { armed = false; toggled = true; svcRef.current.toggle()
+      if (navigator.vibrate) { try { navigator.vibrate(15) } catch (_) {} } }
     const draw = () => { let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`
       for (let i = 1; i < N; i++) d += ` L ${pts[i].x.toFixed(1)} ${pts[i].y.toFixed(1)}`
       if (pathRef.current) pathRef.current.setAttribute('d', d)
@@ -203,28 +209,55 @@ function Lamp({ hass, config }) {
     const step = () => { for (let i = 1; i < N; i++) { const p = pts[i]; const vx = (p.x - p.px) * FRICTION, vy = (p.y - p.py) * FRICTION
         p.px = p.x; p.py = p.y; p.x += vx; p.y += vy + GRAV }
       solve(); const bead = pts[N - 1]
-      if (grab >= 0 && armed && bead.y - restBeadY > THRESHOLD) { armed = false; svcRef.current.toggle(); if (navigator.vibrate) { try { navigator.vibrate(15) } catch (_) {} } }
+      if (grab >= 0 && armed && bead.y - restBeadY > THRESHOLD) fire()
       draw(); let moving = grab >= 0
       if (!moving) for (let i = 1; i < N; i++) { if (Math.abs(pts[i].x - pts[i].px) + Math.abs(pts[i].y - pts[i].py) > 0.25) { moving = true; break } }
       raf = moving ? requestAnimationFrame(step) : 0 }
     const ensure = () => { if (!raf) raf = requestAnimationFrame(step) }
     const settle = () => { for (let k = 0; k < 60; k++) solve(); draw() }
     const lp = (e) => { const r = svg.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top } }
-    const onDown = (e) => { width = svg.clientWidth || width; anchorX = width / 2; const p = lp(e)
-      let best = -1, bd = GRAB_R2; for (let i = 1; i < N; i++) { const dd = (pts[i].x - p.x) ** 2 + (pts[i].y - p.y) ** 2; if (dd < bd) { bd = dd; best = i } }
-      if (best < 0) return; grab = best; mx = p.x; my = p.y; armed = true; e.preventDefault()
-      try { svg.setPointerCapture(e.pointerId) } catch (_) {} if (reduce) { pts[grab].x = mx; pts[grab].y = my; solve(); draw() } else ensure() }
-    const onMove = (e) => { if (grab < 0) return; const p = lp(e); const dx = p.x - anchorX, dy = p.y - ANCHOR_Y, dist = Math.hypot(dx, dy), maxR = (N - 1) * SEG + 40
-      if (dist > maxR) { const s = maxR / dist; mx = anchorX + dx * s; my = ANCHOR_Y + dy * s } else { mx = p.x; my = p.y }
-      if (reduce) { pts[grab].x = mx; pts[grab].y = my; solve(); const bead = pts[N - 1]; if (armed && bead.y - restBeadY > THRESHOLD) { armed = false; svcRef.current.toggle() } draw() } else ensure() }
-    const onUp = () => { if (grab < 0) return; grab = -1; armed = true; if (reduce) settle(); else ensure() }
-    svg.addEventListener('pointerdown', onDown); window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp)
+    // Anywhere in the (enlarged) cord strip grabs the bead. The offset keeps the
+    // bead where it is until the finger moves, so nothing jumps.
+    const onDown = (e) => {
+      if (e.button != null && e.button > 0) return
+      width = svg.clientWidth || width; anchorX = width / 2
+      const p = lp(e)
+      grab = N - 1
+      offX = pts[grab].x - p.x; offY = pts[grab].y - p.y
+      mx = pts[grab].x; my = pts[grab].y
+      armed = true; toggled = false
+      downX = e.clientX; downY = e.clientY; downT = performance.now(); moved = 0
+      e.preventDefault()
+      try { hit.setPointerCapture(e.pointerId) } catch (_) {}
+      if (!reduce) ensure()
+    }
+    const onMove = (e) => {
+      if (grab < 0) return
+      moved = Math.max(moved, Math.hypot(e.clientX - downX, e.clientY - downY))
+      const p = lp(e), tx = p.x + offX, ty = p.y + offY
+      const dx = tx - anchorX, dy = ty - ANCHOR_Y, dist = Math.hypot(dx, dy), maxR = (N - 1) * SEG + 40
+      if (dist > maxR) { const s = maxR / dist; mx = anchorX + dx * s; my = ANCHOR_Y + dy * s } else { mx = tx; my = ty }
+      if (reduce) { pts[grab].x = mx; pts[grab].y = my; solve(); if (armed && pts[N - 1].y - restBeadY > THRESHOLD) fire(); draw() } else ensure()
+    }
+    const onUp = () => {
+      if (grab < 0) return
+      grab = -1
+      // A quick tap that never became a pull still toggles, with a small tug.
+      if (!toggled && moved < TAP_SLOP && performance.now() - downT < TAP_MS) {
+        fire()
+        if (!reduce) { const b = pts[N - 1]; b.py = b.y - 7 }
+      }
+      armed = true
+      if (reduce) settle(); else ensure()
+    }
+    const onCancel = () => { if (grab < 0) return; grab = -1; armed = true; if (reduce) settle(); else ensure() }
+    hit.addEventListener('pointerdown', onDown); window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onCancel)
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => { width = svg.clientWidth || width; anchorX = width / 2; if (grab < 0) { if (reduce) settle(); else ensure() } }) : null
     if (ro) ro.observe(svg)
     settle(); if (!reduce) ensure()
     return () => { if (raf) cancelAnimationFrame(raf); if (ro) ro.disconnect()
-      svg.removeEventListener('pointerdown', onDown); window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp) }
+      hit.removeEventListener('pointerdown', onDown); window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onCancel) }
   }, [])
 
   const onKey = (e) => { if (!supportsBrightness) return; let np = pct
@@ -259,7 +292,7 @@ function Lamp({ hass, config }) {
           <div className="kl-rim" ref=${rimRef} style=${{ backgroundColor: rimColor }} />
           ${!available && html`<div className="kl-unavail">Unavailable</div>`}
         </div>
-        <div className="kl-cord">
+        <div className="kl-cord" ref=${cordRef}>
           <svg className="kl-svg" ref=${svgRef} aria-hidden="true">
             <defs>
               <radialGradient id="kl-bulb" cx="50%" cy="38%" r="62%">

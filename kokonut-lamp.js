@@ -28,7 +28,7 @@ const SPREAD = 500, RESTORE = 16, SURFACE_DAMPING = 5, MAX_WAVE = 16
 
 // Pull cord constants
 const N = 14, SEG = 18, GRAV = 0.7, FRICTION = 0.985, ITER = 8
-const ANCHOR_Y = 16, THRESHOLD = 28, GRAB_R2 = 46 * 46
+const ANCHOR_Y = 48, THRESHOLD = 28, GRAB_R2 = 46 * 46
 
 const COLOR_MODES_WITH_BRIGHTNESS = ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white']
 
@@ -67,7 +67,7 @@ const CSS = `
 .kl-unavail { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5; color: rgba(245,247,251,0.55); font-size: 13px; }
 
 /* Pull cord */
-.kl-cord { position: relative; flex: 0 0 64px; width: 64px; height: 100%; }
+.kl-cord { position: relative; flex: 0 0 82px; width: 82px; height: 100%; }
 .kl-svg { display: block; width: 100%; height: 100%; touch-action: none; }
 .kl-cordpath { fill: none; stroke: rgba(230,235,245,0.75); stroke-width: 2.4; stroke-linecap: round; }
 .kl-bead { stroke: rgba(0,0,0,0.25); stroke-width: 1; cursor: grab; }
@@ -260,8 +260,24 @@ function Lamp({ hass, config }) {
         </div>
         <div className="kl-cord">
           <svg className="kl-svg" ref=${svgRef} aria-hidden="true">
+            <defs>
+              <radialGradient id="kl-bulb" cx="50%" cy="38%" r="62%">
+                <stop offset="0%" stop-color=${isOn ? '#fff8ec' : '#4a5160'} />
+                <stop offset="100%" stop-color=${isOn ? accent : '#39404f'} />
+              </radialGradient>
+              <radialGradient id="kl-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color=${accent} stop-opacity=${isOn ? 0.55 : 0} />
+                <stop offset="100%" stop-color=${accent} stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <circle cx="41" cy="32" r="32" fill="url(#kl-glow)" />
+            <rect x="33" y="2" width="16" height="6" rx="2" fill="rgba(255,255,255,0.22)" />
+            <line x1="41" y1="8" x2="41" y2="18" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
+            <path d=${'M 27 32 a 14 14 0 1 1 28 0 c 0 7 -4 10 -5 14 l -18 0 c -1 -4 -5 -7 -5 -14 Z'}
+              fill="url(#kl-bulb)" stroke="rgba(0,0,0,0.25)" stroke-width="1" />
+            <rect x="35" y="45" width="12" height="7" rx="2" fill="#2b303c" />
             <path className="kl-cordpath" ref=${pathRef} d="" />
-            <circle className="kl-bead" ref=${beadRef} r="8" fill="#e9edf5" cx="32" cy=${ANCHOR_Y + (N - 1) * SEG} />
+            <circle className="kl-bead" ref=${beadRef} r="8" fill="#e9edf5" cx="41" cy=${ANCHOR_Y + (N - 1) * SEG} />
           </svg>
           <div className="kl-cordhint">Pull</div>
         </div>

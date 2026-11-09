@@ -27,7 +27,7 @@ const LEVEL_STIFFNESS = 90, LEVEL_DAMPING = 14
 const SPREAD = 500, RESTORE = 16, SURFACE_DAMPING = 5, MAX_WAVE = 16
 
 // Pull cord constants
-const N = 14, SEG = 18, GRAV = 0.7, FRICTION = 0.985, ITER = 8
+const N = 14, SEG = 9, GRAV = 0.7, FRICTION = 0.985, ITER = 8
 const ANCHOR_Y = 48, THRESHOLD = 28, GRAB_R2 = 46 * 46
 
 const COLOR_MODES_WITH_BRIGHTNESS = ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white']

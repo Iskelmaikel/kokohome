@@ -176,4 +176,59 @@ export const INTERACTIONS = {
     await page.mouse.move(rows.x - 50, rows.y - 50)
     return { pinned: true }
   },
+  // Swipe the front notification away: it is dismissed in HA.
+  'notifications': async (page, s) => {
+    await reset(page)
+    await page.waitForTimeout(300)
+    const art = await page.evaluateHandle((sel) => document.querySelector(sel).querySelector('kokonut-notification-stack').shadowRoot.querySelector('li article'), s)
+    await art.asElement().scrollIntoViewIfNeeded()
+    const b = await art.asElement().boundingBox()
+    // Move off the card first so the stack is collapsed (no hover).
+    const y = b.y + b.height / 2
+    await page.mouse.move(b.x + 40, y); await page.mouse.down()
+    await page.mouse.move(b.x + 220, y, { steps: 8 }); await page.mouse.up()
+    await page.waitForTimeout(700)
+    const left = await page.evaluate((sel) => document.querySelector(sel).querySelector('kokonut-notification-stack').shadowRoot.querySelectorAll('li').length, s)
+    const c = await page.evaluate(() => window.__calls)
+    const d = c.find((x) => x.service === 'dismiss')
+    if (!d) throw new Error('no dismiss call: ' + JSON.stringify(c))
+    if (left !== 2) throw new Error('expected 2 left, got ' + left)
+    return { dismissed: d.data.notification_id, left }
+  },
+  // Pause, then drag the progress bar: media_seek.
+  'now-playing': async (page, s) => {
+    await reset(page)
+    const pp = await box(page, `${s} >> .pp`)
+    await page.mouse.click(pp.x + pp.width / 2, pp.y + pp.height / 2)
+    await page.waitForTimeout(300)
+    const seek = await box(page, `${s} >> .seek`)
+    await page.mouse.move(seek.x + seek.width * 0.2, seek.y + seek.height / 2); await page.mouse.down()
+    await page.mouse.move(seek.x + seek.width * 0.75, seek.y + seek.height / 2, { steps: 6 }); await page.mouse.up()
+    await page.waitForTimeout(300)
+    const c = await page.evaluate(() => window.__calls.map((x) => [x.service, x.data.seek_position]))
+    if (!c.some((x) => x[0] === 'media_play_pause')) throw new Error('no play/pause: ' + JSON.stringify(c))
+    const sk = c.find((x) => x[0] === 'media_seek')
+    if (!sk || Math.abs(sk[1] - 2700) > 60) throw new Error('bad seek: ' + JSON.stringify(c))
+    return c
+  },
+  // Open the first camera, then close with Escape.
+  'cameras': async (page, s) => {
+    const t = await box(page, `${s} >> button.th`)
+    await page.mouse.click(t.x + t.width / 2, t.y + t.height / 2)
+    await page.waitForTimeout(700)
+    const open = await page.evaluate(() => { const h = document.querySelector('[data-kokohome-lightbox]'); return !!h && !h.hidden && h.shadowRoot.querySelector('.cnt').textContent })
+    if (!open) throw new Error('viewer did not open')
+    await page.screenshot({ path: '/tmp/claude-0/-home-claude/d29d6d97-0bf9-59bc-8f70-9059cf6dbac0/scratchpad/lightbox-open.png' })
+    await page.keyboard.press('ArrowRight')
+    await page.waitForTimeout(400)
+    const second = await page.evaluate(() => document.querySelector('[data-kokohome-lightbox]').shadowRoot.querySelector('.cnt').textContent)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(700)
+    // Must be truly gone (not just [hidden]) and must not swallow taps.
+    const closed = await page.evaluate(() => getComputedStyle(document.querySelector('[data-kokohome-lightbox]')).display === 'none')
+    if (!closed) throw new Error('viewer still displayed after close')
+    const hit = await page.evaluate(({ x, y }) => { const el = document.elementFromPoint(x, y); return el && el.closest('.case') ? el.closest('.case').id : el && el.tagName }, { x: t.x + t.width / 2, y: t.y + t.height / 2 })
+    if (hit !== 'case-cameras') throw new Error('something covers the grid after close: ' + hit)
+    return { open, second }
+  },
 }

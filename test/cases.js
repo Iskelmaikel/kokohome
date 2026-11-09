@@ -1,0 +1,20 @@
+// Card configs rendered by the harness. `wide` spans two grid columns.
+export const CASES = [
+  { id: 'hold-red', config: { type: 'custom:kokonut-hold-button', entity: 'script.all_off', name: 'Hold to turn everything off', complete_label: 'All off', icon: 'mdi:power', variant: 'red' } },
+  { id: 'hold-blue', config: { type: 'custom:kokonut-hold-button', entity: 'script.play_youtube_on_lg_tv', name: 'Hold to start Dog TV', complete_label: 'Playing', variant: 'blue' } },
+  { id: 'hold-grey', config: { type: 'custom:kokonut-hold-button', entity: 'scene.movie_night', variant: 'grey' } },
+  { id: 'slide-lock', config: { type: 'custom:kokonut-slide-to-confirm', entity: 'lock.front_door' } },
+  { id: 'slide-script', config: { type: 'custom:kokonut-slide-to-confirm', entity: 'script.all_off', label: 'Slide to shut the house down' } },
+  { id: 'switch-night', config: { type: 'custom:kokonut-switch-button', entity: 'input_boolean.night_mode', name: 'Night mode' } },
+  { id: 'switch-lamp', config: { type: 'custom:kokonut-switch-button', entity: 'light.standing_light_1', on_label: 'On', off_label: 'Off', size: 'lg' } },
+  { id: 'bell-default', config: { type: 'custom:kokonut-bell-button', entity: 'input_boolean.doorbell_alerts', ring_entity: 'binary_sensor.doorbell', count_entity: 'sensor.unread_notifications', name: 'Doorbell alerts' } },
+  { id: 'bell-icon', config: { type: 'custom:kokonut-bell-button', entity: 'input_boolean.night_mode', variant: 'icon', name: 'Quiet hours' } },
+  { id: 'particle-scene', config: { type: 'custom:kokonut-particle-button', entity: 'scene.movie_night', success_label: 'Enjoy the film', pending_label: 'Dimming' } },
+  { id: 'particle-error', config: { type: 'custom:kokonut-particle-button', entity: 'script.broken', variant: 'outline', name: 'Run broken script' } },
+  { id: 'dial-ac', config: { type: 'custom:kokonut-detent-dial', entity: 'climate.living_room_ac', name: 'Living room AC' } },
+  { id: 'dial-volume', config: { type: 'custom:kokonut-detent-dial', entity: 'input_number.tv_volume', label: 'Volume', step: 2, accent: '#7c3aed' } },
+  { id: 'wheel-ac', config: { type: 'custom:kokonut-wheel-picker', entity: 'climate.living_room_ac' } },
+  { id: 'wheel-mixed', config: { type: 'custom:kokonut-wheel-picker', name: 'Wake-up', columns: [{ entity: 'input_datetime.alarm', minute_step: 5 }, { entity: 'input_select.house_mode', label: 'Mode' }] } },
+  { id: 'liquid-volume', config: { type: 'custom:kokonut-liquid-slider', entity: 'media_player.living_room_lg_tv', name: 'TV volume' } },
+  { id: 'liquid-lamp', config: { type: 'custom:kokonut-liquid-slider', entity: 'light.standing_light_1', name: 'Floor lamp' } },
+]

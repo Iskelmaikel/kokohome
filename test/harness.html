@@ -11,7 +11,7 @@
   #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--col, 340px), 1fr)); gap: 16px; align-items: start; }
   .case { min-width: 0; }
   .case > h4 { margin: 0 0 6px; font: 600 11px/1.2 ui-monospace, monospace; color: #71717a; text-transform: uppercase; letter-spacing: .04em; }
-  .case.wide { grid-column: span 2; }
+  @media (min-width: 760px) { .case.wide { grid-column: span 2; } }
 </style>
 <script>
   // Stand-in for HA's <ha-icon>: a filled rounded square sized like the icon.

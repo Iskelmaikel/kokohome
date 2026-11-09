@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kokohome harness</title>
+<style>
+  :root { --card-background-color: #fff; --primary-color: #3b82f6; --divider-color: #e4e4e7; }
+  body { margin: 0; padding: 20px; background: #fafafa; font-family: system-ui, sans-serif; }
+  body.dark { background: #09090b; --card-background-color: #111113; --divider-color: #27272a; color: #f4f4f5; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--col, 340px), 1fr)); gap: 16px; align-items: start; }
+  .case { min-width: 0; }
+  .case > h4 { margin: 0 0 6px; font: 600 11px/1.2 ui-monospace, monospace; color: #71717a; text-transform: uppercase; letter-spacing: .04em; }
+  .case.wide { grid-column: span 2; }
+</style>
+<script>
+  // Stand-in for HA's <ha-icon>: a filled rounded square sized like the icon.
+  customElements.define('ha-icon', class extends HTMLElement {
+    connectedCallback() {
+      this.style.display = 'inline-block'
+      this.style.width = this.style.width || '18px'; this.style.height = this.style.height || '18px'
+      this.style.borderRadius = '30%'; this.style.background = 'currentColor'; this.style.opacity = '.75'
+    }
+  })
+  // Stand-in for Lovelace card helpers (nested cards in container components).
+  window.loadCardHelpers = async () => ({
+    createCardElement(config) {
+      if (config.type && config.type.startsWith('custom:')) {
+        const el = document.createElement(config.type.slice(7)); el.setConfig(config); return el
+      }
+      const el = document.createElement('div')
+      el.className = 'mock-card'
+      el.style.cssText = 'padding:16px;border-radius:12px;border:1px solid var(--divider-color);background:var(--card-background-color);font-size:13px'
+      el.innerHTML = `<b>${config.title || config.type}</b><div style="opacity:.6;margin-top:6px">${config.text || 'Nested ' + config.type + ' card'}</div>`
+      return el
+    },
+  })
+</script>
+</head>
+<body>
+<div id="grid"></div>
+<script type="module">
+  import { makeHass } from './mock-hass.js'
+  import { CASES } from './cases.js'
+  const params = new URLSearchParams(location.search)
+  const dark = params.get('dark') === '1'
+  const only = params.get('only')
+  if (params.get('col')) document.documentElement.style.setProperty('--col', params.get('col'))
+  if (dark) document.body.classList.add('dark')
+  await import('../kokohome.js')
+  const hass = makeHass({ dark })
+  window.__hass = hass
+  const grid = document.getElementById('grid')
+  const cards = []
+  for (const c of CASES) {
+    if (only && !only.split(',').includes(c.id)) continue
+    const wrap = document.createElement('div')
+    wrap.className = 'case' + (c.wide ? ' wide' : '')
+    wrap.id = 'case-' + c.id
+    wrap.innerHTML = `<h4>${c.id}</h4>`
+    const el = document.createElement(c.config.type.replace('custom:', ''))
+    try { el.setConfig(c.config) } catch (e) { wrap.innerHTML += `<pre style="color:red">${e.message}</pre>`; grid.append(wrap); continue }
+    el.hass = hass
+    wrap.append(el); grid.append(wrap); cards.push(el)
+  }
+  window.__setStates = (states) => { window.__hass = { ...window.__hass, states }; for (const el of cards) el.hass = window.__hass }
+  window.__pushHass = () => window.__setStates(window.__hass.states)
+  window.__ready = true
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 /**
  * Kokonut Lamp — one card combining a pull-cord on/off toggle with a liquid-gauge
- * brightness tank, both driving a single Home Assistant light.
+ * brightness tank, both driving a single Home Assistant light. Slim variant: fits
+ * two-up on a dashboard, including phones.
  *   • Pull the cord (physics rope, swings back) to toggle the light.
  *   • Drag the liquid tank up/down (or arrow keys) to set brightness 0–100.
  * No build step: deps import from a pinned ESM CDN at load time.
@@ -14,66 +15,66 @@ import React from 'https://esm.sh/react@18.3.1'
 import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1'
 import htm from 'https://esm.sh/htm@3.1.1'
 
-const VERSION = '0.1.0'
+const VERSION = '0.3.0'
 const { useRef, useEffect, useState } = React
 const html = htm.bind(React.createElement)
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v)
 
-const H = 300  // shared body height
+const H = 230  // shared body height
 
 // Liquid gauge constants
-const COLS = 22, BUBBLES = 7, STEP = 1 / 120
+const COLS = 20, BUBBLES = 6, STEP = 1 / 120
 const LEVEL_STIFFNESS = 90, LEVEL_DAMPING = 14
-const SPREAD = 500, RESTORE = 16, SURFACE_DAMPING = 5, MAX_WAVE = 16
+const SPREAD = 500, RESTORE = 16, SURFACE_DAMPING = 5, MAX_WAVE = 14
 
 // Pull cord constants
 const N = 14, SEG = 9, GRAV = 0.7, FRICTION = 0.985, ITER = 8
-const ANCHOR_Y = 48, THRESHOLD = 28, GRAB_R2 = 46 * 46
+const ANCHOR_Y = 40, THRESHOLD = 24, GRAB_R2 = 42 * 42
 
 const COLOR_MODES_WITH_BRIGHTNESS = ['brightness', 'color_temp', 'hs', 'xy', 'rgb', 'rgbw', 'rgbww', 'white']
 
 const CSS = `
 :host { display: block; }
 .kl-card {
-  position: relative; border-radius: 24px; padding: 16px 16px 18px; color: #f5f7fb;
+  position: relative; border-radius: 22px; padding: 12px 12px 14px; color: #f5f7fb;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background:
     radial-gradient(120% 120% at 15% 0%, rgba(255,255,255,0.08), rgba(255,255,255,0) 45%),
     linear-gradient(160deg, #1b2030 0%, #12151f 100%);
   box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.kl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-.kl-name { font-size: 16px; font-weight: 600; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kl-sub { font-size: 12px; color: rgba(245,247,251,0.5); white-space: nowrap; }
-.kl-body { display: flex; align-items: stretch; gap: 14px; height: ${H}px; }
+.kl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.kl-name { font-size: 14px; font-weight: 600; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kl-sub { font-size: 11px; color: rgba(245,247,251,0.5); white-space: nowrap; }
+.kl-body { display: flex; align-items: stretch; gap: 9px; height: ${H}px; }
 
 /* Liquid gauge */
-.kl-gauge { position: relative; flex: 1 1 auto; min-width: 120px; height: 100%; border-radius: 26px; overflow: hidden;
+.kl-gauge { position: relative; flex: 1 1 auto; min-width: 78px; height: 100%; border-radius: 18px; overflow: hidden;
   background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.4); cursor: ns-resize; touch-action: none; user-select: none; }
 .kl-ticks { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-.kl-tick { position: absolute; right: 0; width: 8px; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.18); }
-.kl-tick.kl-mid { width: 14px; background: rgba(255,255,255,0.3); }
+.kl-tick { position: absolute; right: 0; width: 6px; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.18); }
+.kl-tick.kl-mid { width: 10px; background: rgba(255,255,255,0.3); }
 .kl-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.kl-pct { font-variant-numeric: tabular-nums; font-size: 52px; font-weight: 750; line-height: 1; letter-spacing: -1px; }
-.kl-pct small { font-size: 20px; font-weight: 650; margin-left: 2px; }
-.kl-status { position: absolute; left: 14px; bottom: 14px; font-size: 12px; font-weight: 600; opacity: .85; }
+.kl-pct { font-variant-numeric: tabular-nums; font-size: 32px; font-weight: 750; line-height: 1; letter-spacing: -1px; }
+.kl-pct small { font-size: 13px; font-weight: 650; margin-left: 1px; }
+.kl-status { position: absolute; left: 10px; bottom: 10px; font-size: 11px; font-weight: 600; opacity: .85; }
 .kl-bgtext { color: #f5f7fb; }
 .kl-liqtext { color: #16181f; }
 .kl-liquid { position: absolute; inset: 0; z-index: 3; will-change: clip-path;
   clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); }
 .kl-rim { position: absolute; left: 0; right: 0; height: 3px; z-index: 4; opacity: .7; transform: translateY(${H}px); will-change: transform; pointer-events: none; }
-.kl-bubble { position: absolute; bottom: 0; left: 0; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); opacity: 0; will-change: transform, opacity; }
-.kl-unavail { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5; color: rgba(245,247,251,0.55); font-size: 13px; }
+.kl-bubble { position: absolute; bottom: 0; left: 0; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.5); opacity: 0; will-change: transform, opacity; }
+.kl-unavail { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5; color: rgba(245,247,251,0.55); font-size: 12px; }
 
 /* Pull cord */
-.kl-cord { position: relative; flex: 0 0 82px; width: 82px; height: 100%; }
+.kl-cord { position: relative; flex: 0 0 46px; width: 46px; height: 100%; }
 .kl-svg { display: block; width: 100%; height: 100%; touch-action: none; }
-.kl-cordpath { fill: none; stroke: rgba(230,235,245,0.75); stroke-width: 2.4; stroke-linecap: round; }
+.kl-cordpath { fill: none; stroke: rgba(230,235,245,0.75); stroke-width: 2.2; stroke-linecap: round; }
 .kl-bead { stroke: rgba(0,0,0,0.25); stroke-width: 1; cursor: grab; }
 .kl-bead:active { cursor: grabbing; }
-.kl-cordhint { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 10px;
-  letter-spacing: .5px; text-transform: uppercase; color: rgba(245,247,251,0.35); }
+.kl-cordhint { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 9px;
+  letter-spacing: .4px; text-transform: uppercase; color: rgba(245,247,251,0.35); }
 .kl-a11y { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
 `
 
@@ -124,7 +125,7 @@ function Lamp({ hass, config }) {
     const gauge = gaugeRef.current, liquid = liquidRef.current
     if (!gauge || !liquid) return
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let W = gauge.clientWidth || 160
+    let W = gauge.clientWidth || 120
     let levelY = H * (1 - targetRef.current), levelVel = 0
     const h = new Array(COLS).fill(0), hv = new Array(COLS).fill(0), force = new Array(COLS).fill(0)
     const bubbles = []; for (let i = 0; i < BUBBLES; i++) bubbles.push({ alive: false, x: 0, y: 0, vy: 0, r: 4 })
@@ -132,7 +133,7 @@ function Lamp({ hass, config }) {
     const colX = (i) => (i / (COLS - 1)) * W
     const colAt = (x) => clamp(Math.round((x / Math.max(1, W)) * (COLS - 1)), 0, COLS - 1)
     const spawn = () => { const b = bubbles.find((q) => !q.alive); if (!b) return
-      b.alive = true; b.x = 8 + Math.random() * (W - 16); b.y = H - 6; b.vy = 30 + Math.random() * 45; b.r = 3 + Math.random() * 3 }
+      b.alive = true; b.x = 8 + Math.random() * (W - 16); b.y = H - 6; b.vy = 28 + Math.random() * 40; b.r = 2.5 + Math.random() * 2.5 }
     const sim = (dt) => {
       const targetY = H * (1 - clamp(targetRef.current, 0, 1)), prev = levelY
       levelVel += (LEVEL_STIFFNESS * (targetY - levelY) - LEVEL_DAMPING * levelVel) * dt
@@ -186,7 +187,7 @@ function Lamp({ hass, config }) {
     const svg = svgRef.current
     if (!svg) return
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let width = svg.clientWidth || 64, anchorX = width / 2
+    let width = svg.clientWidth || 46, anchorX = width / 2
     const pts = []
     for (let i = 0; i < N; i++) { const y = ANCHOR_Y + i * SEG; pts.push({ x: anchorX, y, px: anchorX, py: y }) }
     const restBeadY = ANCHOR_Y + (N - 1) * SEG
@@ -213,7 +214,7 @@ function Lamp({ hass, config }) {
       let best = -1, bd = GRAB_R2; for (let i = 1; i < N; i++) { const dd = (pts[i].x - p.x) ** 2 + (pts[i].y - p.y) ** 2; if (dd < bd) { bd = dd; best = i } }
       if (best < 0) return; grab = best; mx = p.x; my = p.y; armed = true; e.preventDefault()
       try { svg.setPointerCapture(e.pointerId) } catch (_) {} if (reduce) { pts[grab].x = mx; pts[grab].y = my; solve(); draw() } else ensure() }
-    const onMove = (e) => { if (grab < 0) return; const p = lp(e); const dx = p.x - anchorX, dy = p.y - ANCHOR_Y, dist = Math.hypot(dx, dy), maxR = (N - 1) * SEG + 46
+    const onMove = (e) => { if (grab < 0) return; const p = lp(e); const dx = p.x - anchorX, dy = p.y - ANCHOR_Y, dist = Math.hypot(dx, dy), maxR = (N - 1) * SEG + 40
       if (dist > maxR) { const s = maxR / dist; mx = anchorX + dx * s; my = ANCHOR_Y + dy * s } else { mx = p.x; my = p.y }
       if (reduce) { pts[grab].x = mx; pts[grab].y = my; solve(); const bead = pts[N - 1]; if (armed && bead.y - restBeadY > THRESHOLD) { armed = false; svcRef.current.toggle() } draw() } else ensure() }
     const onUp = () => { if (grab < 0) return; grab = -1; armed = true; if (reduce) settle(); else ensure() }
@@ -270,14 +271,14 @@ function Lamp({ hass, config }) {
                 <stop offset="100%" stop-color=${accent} stop-opacity="0" />
               </radialGradient>
             </defs>
-            <circle cx="41" cy="32" r="32" fill="url(#kl-glow)" />
-            <rect x="33" y="2" width="16" height="6" rx="2" fill="rgba(255,255,255,0.22)" />
-            <line x1="41" y1="8" x2="41" y2="18" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
-            <path d=${'M 27 32 a 14 14 0 1 1 28 0 c 0 7 -4 10 -5 14 l -18 0 c -1 -4 -5 -7 -5 -14 Z'}
+            <circle cx="23" cy="26" r="26" fill="url(#kl-glow)" />
+            <rect x="16" y="2" width="14" height="5" rx="2" fill="rgba(255,255,255,0.22)" />
+            <line x1="23" y1="7" x2="23" y2="15" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
+            <path d=${'M 13 26 a 10 10 0 1 1 20 0 c 0 5 -3 7 -4 10 l -12 0 c -1 -3 -4 -5 -4 -10 Z'}
               fill="url(#kl-bulb)" stroke="rgba(0,0,0,0.25)" stroke-width="1" />
-            <rect x="35" y="45" width="12" height="7" rx="2" fill="#2b303c" />
+            <rect x="18" y="36" width="10" height="6" rx="2" fill="#2b303c" />
             <path className="kl-cordpath" ref=${pathRef} d="" />
-            <circle className="kl-bead" ref=${beadRef} r="8" fill="#e9edf5" cx="41" cy=${ANCHOR_Y + (N - 1) * SEG} />
+            <circle className="kl-bead" ref=${beadRef} r="7" fill="#e9edf5" cx="23" cy=${ANCHOR_Y + (N - 1) * SEG} />
           </svg>
           <div className="kl-cordhint">Pull</div>
         </div>
@@ -305,7 +306,7 @@ class KokonutLamp extends HTMLElement {
     this._root = createRoot(this._mount)
   }
   _render() { if (!this._config) return; this._ensure(); this._root.render(html`<${Lamp} hass=${this._hass} config=${this._config} />`) }
-  getCardSize() { return 5 }
+  getCardSize() { return 4 }
   static getStubConfig() { return { entity: 'light.example' } }
 }
 

@@ -3,10 +3,65 @@
 [Kokonut UI](https://kokonutui.com) components, ported to **Home Assistant Lovelace cards**: the same physics, springs and details as the originals, wired to your entities.
 
 - **Dependency-free**: plain web components plus a small built-in motion engine. Nothing is fetched at runtime, so cards keep working offline and load fast.
-- **One resource** loads all 24 cards.
+- **One resource** loads all 22 cards.
 - **Light and dark**: they follow your Home Assistant theme.
 - **Responsive**: each card adapts to its own width, including two-up on a phone.
 - **Accessible**: keyboard support, screen-reader labels and reduced-motion fallbacks, as in the originals.
+
+## Gallery
+
+Recorded in the test page (`test/record.mjs`) against mock entities. The grey dot is the pointer. Icons are look-alikes here; in Home Assistant the cards use your Material Design Icons.
+
+### Controls
+
+<table>
+<tr>
+<td width="50%"><b>Hold button</b><br>An early release drains back; a full hold runs the action.<br><img src="docs/media/hold-button.gif" alt="Hold button: the fill grows while held, then turns red with a check" width="100%"></td>
+<td width="50%"><b>Slide to confirm</b><br>A half slide springs back; a full slide unlocks.<br><img src="docs/media/slide-to-confirm.gif" alt="Slide to confirm: the thumb is dragged across, a spinner runs, then it turns green" width="100%"></td>
+</tr>
+<tr>
+<td><b>Particle button</b><br>Spinner while the scene runs, then a check and a burst.<br><img src="docs/media/particle-button.gif" alt="Particle button: label rolls to a spinner, then a check with flying particles" width="100%"></td>
+<td><b>Switch button</b><br>The sun morphs into a moon.<br><img src="docs/media/switch-button.gif" alt="Switch button: a sun icon morphs into a moon and the state changes to on" width="100%"></td>
+</tr>
+<tr>
+<td><b>Detent dial</b><br>Notches, overshoot and flick-coast; sends one value after release.<br><img src="docs/media/detent-dial.gif" alt="Detent dial: the knob is turned and the target temperature changes" width="100%"></td>
+<td><b>Wheel picker</b><br>Climate entities get Mode and Fan drums automatically.<br><img src="docs/media/wheel-picker.gif" alt="Wheel picker: the fan drum is dragged from Auto to High" width="100%"></td>
+</tr>
+<tr>
+<td><b>Liquid slider</b><br>Fill the glass with your finger: waves, bubbles, a spring level.<br><img src="docs/media/liquid-slider.gif" alt="Liquid slider: the liquid rises from 18% to 78% with bubbles" width="100%"></td>
+<td><b>Bell button</b><br>Notification toggle; the bell swings when it changes or rings.<br><img src="docs/media/bell-button.gif" alt="Bell button: tapping it swings the bell and switches notifications" width="100%"></td>
+</tr>
+</table>
+
+### Display
+
+<table>
+<tr>
+<td width="50%"><b>Now playing</b><br>Grab the record to scrub (it seeks), or drag the rail.<br><img src="docs/media/now-playing.gif" alt="Now playing: a spinning record with a tonearm; the progress rail is dragged forward" width="100%"></td>
+<td width="50%"><b>Split flap</b><br>Departure-board lettering for a clock or sensor values.<br><img src="docs/media/split-flap.gif" alt="Split flap: tiles flip from IN 21.6°C to OUT 8.5°C" width="100%"></td>
+</tr>
+<tr>
+<td><b>Metric card</b><br>Long-term statistics vs the previous period; switch periods and the line morphs.<br><img src="docs/media/metric-card.gif" alt="Metric card: switching from 30 days to 7 days, the total and the chart morph" width="100%"></td>
+<td><b>Spending ring</b><br>Spin the donut, or tap a row to bring a device to the top.<br><img src="docs/media/spending-ring.gif" alt="Spending ring: tapping TV spins its segment to the top" width="100%"></td>
+</tr>
+<tr>
+<td><b>Uptime</b><br>Status-page bars from history; pin a day to see its outage log.<br><img src="docs/media/uptime-card.gif" alt="Uptime card: tapping a day opens its outage log" width="100%"></td>
+<td><b>Notification stack</b><br>Home Assistant's notifications; expand, and swipe to dismiss.<br><img src="docs/media/notification-stack.gif" alt="Notification stack: the stack expands and a notification is swiped away" width="100%"></td>
+</tr>
+</table>
+
+### Layout
+
+<table>
+<tr>
+<td width="50%"><b>Swipe tabs</b><br>Any cards in swipeable tabs; the height follows the tab.<br><img src="docs/media/swipe-tabs.gif" alt="Swipe tabs: switching to the Climate tab shows a dial, then back" width="100%"></td>
+<td width="50%"><b>Flick card</b><br>Two sides you flick over like a coin.<br><img src="docs/media/flick-card.gif" alt="Flick card: the card flips from a clock to its back side" width="100%"></td>
+</tr>
+<tr>
+<td><b>Status island</b><br>A Dynamic-Island pill of what's running.<br><img src="docs/media/status-island.gif" alt="Status island: Starting Dog TV morphs into Dog TV is on" width="100%"></td>
+<td><b>Tool dock</b><br>Modes or scripts with a sliding plate.<br><img src="docs/media/tool-dock.gif" alt="Tool dock: the plate slides to the selected mode" width="100%"></td>
+</tr>
+</table>
 
 ## Install
 
@@ -68,7 +123,7 @@ Each card's file under [`cards/`](cards/) starts with its full set of options.
 
 ## Development
 
-`node test/run.mjs --interact` renders every card in Chromium against a mock `hass` (see `test/mock-hass.js`), in light and dark, and runs gesture tests (`test/interactions.mjs`). It fails on any console error. Screenshots go to `test/shots/`.
+`node test/run.mjs --interact` renders every card in Chromium against a mock `hass` (see `test/mock-hass.js`), in light and dark, and runs gesture tests (`test/interactions.mjs`). It fails on any console error. Screenshots go to `test/shots/`. `node test/record.mjs [name …]` re-records the gallery GIFs into `docs/media/`.
 
 ## License
 

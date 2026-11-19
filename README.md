@@ -1,5 +1,7 @@
 # Kokohome
 
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Iskelmaikel&repository=kokohome&category=plugin)
+
 [Kokonut UI](https://kokonutui.com) components, ported to **Home Assistant Lovelace cards**: the same physics, springs and details as the originals, wired to your entities.
 
 - **Dependency-free**: plain web components plus a small built-in motion engine. Nothing is fetched at runtime, so cards keep working offline and load fast.
@@ -65,13 +67,29 @@ Recorded in the test page (`test/record.mjs`) against mock entities. The grey do
 
 ## Install
 
+### HACS (recommended)
+
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Iskelmaikel&repository=kokohome&category=plugin)
+
+1. Click the button above. It opens HACS in your Home Assistant and adds this repository (type **Dashboard**).
+2. Click **Download**. HACS adds the dashboard resource for you.
+3. Reload the browser, or use *Reset frontend cache* in the companion app.
+
+Without the button: in HACS open **⋮ → Custom repositories**, add `https://github.com/Iskelmaikel/kokohome` with type **Dashboard**, then download **Kokohome**.
+
+HACS loads `dist/kokohome.js`, which includes every card and the pull-cord lamp.
+
+### Manual
+
 Add **one** dashboard resource (*Settings → Dashboards → ⋮ → Resources*), type **JavaScript module**:
 
 ```
 https://cdn.jsdelivr.net/gh/Iskelmaikel/kokohome@<commit-or-tag>/kokohome.js
 ```
 
-Pin a commit or tag (not `@main`). jsDelivr and your browser both cache aggressively, so bump the pin when you update. Then hard-refresh, or use *Reset frontend cache* in the companion app.
+Pin a commit or tag (not `@main`). jsDelivr and your browser both cache aggressively, so bump the pin when you update. Then hard-refresh, or use *Reset frontend cache* in the companion app. The pull-cord lamp is a separate resource here (`kokonut-lamp.js`).
+
+Use one way or the other, not both.
 
 Every card accepts `card: false` to drop its frame, and `theme: light | dark` to force a theme.
 
@@ -89,7 +107,7 @@ Every card accepts `card: false` to drop its frame, and `theme: light | dark` to
 | `kokonut-detent-dial` | A 270° knob with notches, overshoot and flick-coast. Sends one value after release. | `entity: climate.x` (or number / light / media volume / cover / fan) |
 | `kokonut-wheel-picker` | An iOS-style drum picker. Climate entities get Mode and Fan drums automatically; also handles selects, sources and alarm times. | `entity: climate.x` or `columns: [...]` |
 | `kokonut-liquid-slider` | A glass you fill with your finger, with waves, bubbles and a spring level. | `entity: media_player.x` · `color: sky/amber/emerald/violet/rose/orange` |
-| `kokonut-lamp` | Pull cord plus liquid brightness gauge for one light (separate resource, see below). | `entity: light.x` |
+| `kokonut-lamp` | Pull cord plus liquid brightness gauge for one light (included with HACS; a separate resource when installed manually). | `entity: light.x` |
 
 ### Display
 
@@ -119,11 +137,13 @@ Each card's file under [`cards/`](cards/) starts with its full set of options.
 
 ### Older single-file cards
 
-`kokonut-lamp.js`, `kokonut-pull-cord.js`, `kokonut-liquid-gauge.js` and `kokonut-light-card.js` are the first, React-based experiments. Each is still loaded as its own resource.
+`kokonut-lamp.js`, `kokonut-pull-cord.js`, `kokonut-liquid-gauge.js` and `kokonut-light-card.js` are the first, React-based experiments that load React from a CDN. The HACS build includes `kokonut-lamp.js`; the others are each loaded as their own resource.
 
 ## Development
 
 `node test/run.mjs --interact` renders every card in Chromium against a mock `hass` (see `test/mock-hass.js`), in light and dark, and runs gesture tests (`test/interactions.mjs`). It fails on any console error. Screenshots go to `test/shots/`. `node test/record.mjs [name …]` re-records the gallery GIFs into `docs/media/`.
+
+After changing `kokohome.js` or anything in `cards/`, run `node scripts/build-dist.mjs` to rebuild `dist/` for HACS, and commit it.
 
 ## License
 
